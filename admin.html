@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Warkop JM Eiko</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <!-- ==========================================
+       LOGIN VIEW
+    ========================================== -->
+    <div id="loginView" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Warkop JM Eiko</h1>
+                <p>Admin Dashboard Login</p>
+            </div>
+            
+            <div id="loginError" class="login-error hide">
+                Password yang Anda masukkan salah!
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="adminPassword">Password Akses</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="adminPassword" placeholder="Masukkan password admin" required>
+                        <button type="button" id="btnTogglePassword" class="toggle-password" aria-label="Tampilkan Password">
+                            <i data-lucide="eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-admin">
+                    Masuk Dashboard <i data-lucide="log-in"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+       DASHBOARD VIEW
+    ========================================== -->
+    <div id="dashboardView" class="dashboard-wrapper hide">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-logo">Admin JM Eiko</h2>
+                <!-- Mobile Navigation Select -->
+                <select class="mobile-nav-select" id="mobileNavSelect">
+                    <option value="settings">Pengaturan Halaman</option>
+                    <option value="menu">Kelola Menu</option>
+                    <option value="gallery">Kelola Galeri</option>
+                </select>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#settings" class="sidebar-item active" data-tab-trigger="settings">
+                    <i data-lucide="layout-template"></i> Pengaturan Halaman
+                </a>
+                <a href="#menu" class="sidebar-item" data-tab-trigger="menu">
+                    <i data-lucide="coffee"></i> Kelola Menu
+                </a>
+                <a href="#gallery" class="sidebar-item" data-tab-trigger="gallery">
+                    <i data-lucide="image"></i> Kelola Galeri
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="btnLogout" class="btn-logout">
+                    Keluar <i data-lucide="log-out"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Active Tab Title Header -->
+            <div class="dashboard-header">
+                <div>
+                    <h2 id="activeTabTitle">Pengaturan Halaman</h2>
+                    <p id="activeTabSubtitle">Kelola gambar utama, judul, dan deskripsi halaman utama.</p>
+                </div>
+                <a href="index.html" target="_blank" class="btn-primary-admin" style="background-color: var(--color-accent);">
+                    Lihat Website <i data-lucide="external-link" style="width:16px;"></i>
+                </a>
+            </div>
+
+            <!-- TAB 1: PAGE SETTINGS -->
+            <div id="settingsTab" class="tab-pane active">
+                <form id="settingsForm">
+                    <div class="settings-grid">
+                        <!-- Hero Section Settings -->
+                        <div class="settings-card">
+                            <h3>Bagian Hero (Halaman Depan)</h3>
+                            
+                            <div class="form-group">
+                                <label>Pratinjau Gambar Hero</label>
+                                <img src="images/hero_kettle_coffee.png" alt="Hero Preview" id="heroPreviewImg" class="settings-image-preview">
+                                <div class="image-input-group">
+                                    <input type="file" id="heroImageInput" accept="image/*">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="heroTitleInput">Judul Utama Hero (HTML diizinkan)</label>
+                                <input type="text" id="heroTitleInput" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="heroDescInput">Deskripsi Hero</label>
+                                <textarea id="heroDescInput" rows="3" required></textarea>
+                            </div>
+                        </div>
+
+                        <!-- About Section Settings -->
+                        <div class="settings-card">
+                            <h3>Bagian Filosofi (Tentang Kami)</h3>
+                            
+                            <div class="form-group">
+                                <label>Pratinjau Gambar About</label>
+                                <img src="images/warkop_about.png" alt="About Preview" id="aboutPreviewImg" class="settings-image-preview">
+                                <div class="image-input-group">
+                                    <input type="file" id="aboutImageInput" accept="image/*">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group flex-row" style="display:flex; gap:16px;">
+                                <div class="form-group" style="flex:1; margin-bottom:0;">
+                                    <label for="aboutSinceInput">Tahun Berdiri (Sejak)</label>
+                                    <input type="number" id="aboutSinceInput" required>
+                                </div>
+                                <div class="form-group" style="flex:2; margin-bottom:0;">
+                                    <label for="aboutTitleInput">Sub-Judul Filosofi</label>
+                                    <input type="text" id="aboutTitleInput" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top:20px;">
+                                <label for="aboutDesc1Input">Paragraf Deskripsi 1</label>
+                                <textarea id="aboutDesc1Input" rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="aboutDesc2Input">Paragraf Deskripsi 2</label>
+                                <textarea id="aboutDesc2Input" rows="3" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn-primary-admin" style="padding:14px 28px;">
+                            Simpan Perubahan Halaman <i data-lucide="save"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 2: MENU SETTINGS -->
+            <div id="menuTab" class="tab-pane">
+                <div class="content-actions">
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">Total item menu terdaftar dalam database.</p>
+                    <button class="btn-primary-admin" id="btnOpenAddMenuModal">
+                        Tambah Menu Baru <i data-lucide="plus"></i>
+                    </button>
+                </div>
+                
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Gambar</th>
+                                <th>Nama Menu</th>
+                                <th>Kategori</th>
+                                <th>Harga</th>
+                                <th>Deskripsi</th>
+                                <th style="width: 110px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminMenuList">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: GALLERY SETTINGS -->
+            <div id="galleryTab" class="tab-pane">
+                <div class="content-actions">
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">Foto-foto galeri yang ditampilkan di halaman utama.</p>
+                    <button class="btn-primary-admin" id="btnOpenAddGalleryModal">
+                        Tambah Foto Baru <i data-lucide="plus"></i>
+                    </button>
+                </div>
+                
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Gambar</th>
+                                <th>Judul Foto / Keterangan</th>
+                                <th>Kategori</th>
+                                <th style="width: 110px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminGalleryList">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==========================================
+       MODALS
+    ========================================== -->
+
+    <!-- Menu Item Modal (Add/Edit) -->
+    <div class="admin-modal" id="menuItemModal">
+        <div class="admin-modal-backdrop" data-close-modal></div>
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 id="menuModalTitle">Tambah Menu Baru</h3>
+                <button class="btn-close-modal" data-close-modal aria-label="Tutup"><i data-lucide="x"></i></button>
+            </div>
+            <form id="menuItemForm">
+                <input type="hidden" id="menuItemIndex">
+                
+                <div class="form-group">
+                    <label>Gambar Menu</label>
+                    <div class="image-input-group">
+                        <img src="" alt="Menu Item Preview" id="menuItemPreviewImg" class="image-upload-preview hide">
+                        <input type="file" id="menuItemImageInput" accept="image/*">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="menuItemName">Nama Menu</label>
+                    <input type="text" id="menuItemName" placeholder="Contoh: Kopi Tubruk Original" required>
+                </div>
+                
+                <div class="form-group" style="display:flex; gap:16px;">
+                    <div style="flex:1;">
+                        <label for="menuItemCategory">Kategori</label>
+                        <select id="menuItemCategory" required>
+                            <option value="kopi">Kopi</option>
+                            <option value="minuman">Non-Kopi</option>
+                            <option value="makanan">Makanan Utama</option>
+                            <option value="cemilan">Cemilan</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label for="menuItemPrice">Harga</label>
+                        <input type="text" id="menuItemPrice" placeholder="Contoh: Rp 7.000" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="menuItemDesc">Deskripsi Singkat</label>
+                    <textarea id="menuItemDesc" rows="3" placeholder="Deskripsikan sajian warkop ini..." required></textarea>
+                </div>
+                
+                <button type="submit" class="btn-admin" style="margin-top: 20px;">
+                    Simpan Item Menu <i data-lucide="save"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Gallery Item Modal (Add/Edit) -->
+    <div class="admin-modal" id="galleryItemModal">
+        <div class="admin-modal-backdrop" data-close-modal></div>
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 id="galleryModalTitle">Tambah Foto Baru</h3>
+                <button class="btn-close-modal" data-close-modal aria-label="Tutup"><i data-lucide="x"></i></button>
+            </div>
+            <form id="galleryItemForm">
+                <input type="hidden" id="galleryItemIndex">
+                
+                <div class="form-group">
+                    <label>Gambar Galeri</label>
+                    <div class="image-input-group">
+                        <img src="" alt="Gallery Preview" id="galleryItemPreviewImg" class="image-upload-preview hide">
+                        <input type="file" id="galleryItemImageInput" accept="image/*">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="galleryItemTitle">Judul Foto / Caption</label>
+                    <input type="text" id="galleryItemTitle" placeholder="Contoh: Suasana Warkop Sore Hari" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="galleryItemCategory">Kategori</label>
+                    <select id="galleryItemCategory" required>
+                        <option value="Aktivitas">Aktivitas</option>
+                        <option value="Suasana">Suasana</option>
+                        <option value="Sajian">Sajian</option>
+                        <option value="Produk">Produk</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-admin" style="margin-top: 20px;">
+                    Simpan Foto Galeri <i data-lucide="save"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i data-lucide="check-circle" id="toastIcon"></i>
+        <span id="toastMessage">Tindakan berhasil diselesaikan!</span>
+    </div>
+
+    <!-- Script -->
+    <script src="admin.js"></script>
+</body>
+</html>
