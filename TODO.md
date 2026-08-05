@@ -1,20 +1,11 @@
-pdua# TODO - Migrasi ke Firebase Realtime
+# TODO - Penyediaan Web
 
 ## Langkah
 - [x] 1. Analisis masalah (localStorage antar-perangkat)
-- [x] 2. Buat `firebase-config.js` (konfigurasi + helper)
-
-- [x] 4. Update `admin.js` (tulis data ke Firestore)
-- [x] 5. Update `index.html` (tambah Firebase SDK)
-- [x] 6. Update `app.js` (baca realtime via onSnapshot)
+- [x] 2. Hapus kode Firebase (tidak dipakai)
+- [x] 3. Bersihkan referensi Firebase dari admin.html & index.html
+- [x] 4. Kembalikan admin.js & app.js ke penyimpanan localStorage
+- [x] 5. Hapus firebase-config.js
+- [x] 6. Perbarui dokumentasi README
 - [ ] 7. Commit & push ke GitHub
-- [x] 8. Dokumentasi panduan pengisian kredensial Firebase
-## Langkah
-- [x] 1. Analisis masalah (localStorage antar-perangkat)
-- [ ] 2. Buat `firebase-config.js` (konfigurasi + helper)
-- [ ] 3. Update `admin.html` (tambah Firebase SDK)
-- [ ] 4. Update `admin.js` (tulis data ke Firestore)
-- [ ] 5. Update `index.html` (tambah Firebase SDK)
-- [ ] 6. Update `app.js` (baca realtime via onSnapshot)
-- [ ] 7. Commit & push ke GitHub
-- [ ] 8. Dokumentasi panduan pengisian kredensial Firebase
+</content>

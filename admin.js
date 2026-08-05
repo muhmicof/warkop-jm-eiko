@@ -149,30 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Database Loaders
     const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
-    const saveSettings = (data) => {
-        localStorage.setItem('warkop_settings', JSON.stringify(data));
-        saveDataToFirestore('settings', data);
-    };
+    const saveSettings = (data) => localStorage.setItem('warkop_settings', JSON.stringify(data));
     const getMenu = () => JSON.parse(localStorage.getItem('warkop_menu'));
-    const saveMenu = (data) => {
-        localStorage.setItem('warkop_menu', JSON.stringify(data));
-        saveDataToFirestore('menu', data);
-    };
+    const saveMenu = (data) => localStorage.setItem('warkop_menu', JSON.stringify(data));
     const getGallery = () => JSON.parse(localStorage.getItem('warkop_gallery'));
-    const saveGallery = (data) => {
-        localStorage.setItem('warkop_gallery', JSON.stringify(data));
-        saveDataToFirestore('gallery', data);
-    };
-
-// Initialize Firebase (returns false if not configured yet)
-    const firebaseReady = initFirebase();
-
-    // Seed Firestore with local data on first login (only if Firestore empty)
-    if (firebaseReady) {
-        seedFirestoreFromLocal('warkop_settings', 'settings');
-        seedFirestoreFromLocal('warkop_menu', 'menu');
-        seedFirestoreFromLocal('warkop_gallery', 'gallery');
-    }
+    const saveGallery = (data) => localStorage.setItem('warkop_gallery', JSON.stringify(data));
 
 
     // ==========================================
