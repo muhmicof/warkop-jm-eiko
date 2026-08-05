@@ -145,9 +145,78 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('warkop_gallery', JSON.stringify(defaultGallery));
     }
 
-    const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
+const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
     const getMenu = () => JSON.parse(localStorage.getItem('warkop_menu'));
     const getGallery = () => JSON.parse(localStorage.getItem('warkop_gallery'));
+
+    // Initialize Firebase
+    const firebaseReady = initFirebase();
+
+    // ==========================================
+    // 1.5 REAL-TIME FIRESTORE SYNC
+    // ==========================================
+
+    // Master render function - re-renders everything
+    const renderAll = () => {
+        renderPageSettings();
+        renderFeaturedMenu();
+        renderGallery();
+        lucide.createIcons();
+    };
+
+    // If Firebase is configured, listen for realtime updates
+    if (firebaseReady) {
+        // Listen to settings collection
+        listenToFirestore('settings', (data) => {
+            if (data) {
+                localStorage.setItem('warkop_settings', JSON.stringify(data));
+                renderPageSettings();
+                lucide.createIcons();
+            }
+        });
+
+        // Listen to menu collection
+        listenToFirestore('menu', (data) => {
+            if (data) {
+                localStorage.setItem('warkop_menu', JSON.stringify(data));
+                renderFeaturedMenu();
+                lucide.createIcons();
+            }
+        });
+
+// Listen to gallery collection
+        listenToFirestore('gallery', (data) => {
+            if (data) {
+                localStorage.setItem('warkop_gallery', JSON.stringify(data));
+                renderGallery();
+                lucide.createIcons();
+            }
+        });
+
+        // Bootstrap: load existing Firestore data on first visit so
+        // the public site shows cloud data even before a change occurs.
+        getDataFromFirestore('settings').then((data) => {
+            if (data) {
+                localStorage.setItem('warkop_settings', JSON.stringify(data));
+                renderPageSettings();
+                lucide.createIcons();
+            }
+        });
+        getDataFromFirestore('menu').then((data) => {
+            if (data) {
+                localStorage.setItem('warkop_menu', JSON.stringify(data));
+                renderFeaturedMenu();
+                lucide.createIcons();
+            }
+        });
+        getDataFromFirestore('gallery').then((data) => {
+            if (data) {
+                localStorage.setItem('warkop_gallery', JSON.stringify(data));
+                renderGallery();
+                lucide.createIcons();
+            }
+        });
+    }
 
 
     // ==========================================
@@ -468,4 +537,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Listen for storage changes from the admin tab and instantly update the content
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'warkop_settings' || e.key === 'warkop_menu' || e.key === 'warkop_gallery') {
+            renderPageSettings();
+            renderFeaturedMenu();
+            renderGallery();
+            lucide.createIcons();
+        }
+    });
 });
