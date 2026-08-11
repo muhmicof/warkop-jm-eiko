@@ -6,6 +6,88 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // ==========================================
+    // 0. SUPABASE CLOUD SYNC (if configured)
+    // ==========================================
+    const supabaseClient = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : null;
+    const useCloud = !!supabaseClient;
+    let cloudState = {
+        settings: null,
+        menu: null,
+        gallery: null
+    };
+
+    // Empty-state fallback for localStorage when cloud is active
+    const emptySettings = {
+        hero_title: 'Hangatnya Kopi,<br>Kuatnya Persaudaraan.',
+        hero_desc: 'Sedang memuat konten dari penyimpanan cloud...',
+        hero_image: 'images/hero_kettle_coffee.png',
+        about_since: '',
+        about_title: '',
+        about_desc1: '',
+        about_desc2: '',
+        about_image: 'images/warkop_about.png'
+    };
+
+    // Pre-populate localStorage with empty defaults if using cloud so renders don't crash
+    if (useCloud) {
+        if (!localStorage.getItem('warkop_settings')) {
+            localStorage.setItem('warkop_settings', JSON.stringify(emptySettings));
+        }
+        if (!localStorage.getItem('warkop_menu')) {
+            localStorage.setItem('warkop_menu', JSON.stringify([]));
+        }
+        if (!localStorage.getItem('warkop_gallery')) {
+            localStorage.setItem('warkop_gallery', JSON.stringify([]));
+        }
+    }
+
+    // Fetch all data from Supabase (menu & gallery ordered by sort_order)
+    async function fetchAllCloudData() {
+        if (!useCloud) return;
+        try {
+            const [settingsRes, menuRes, galleryRes] = await Promise.all([
+                supabaseClient.from('settings').select('*').limit(1).maybeSingle(),
+                supabaseClient.from('menu').select('*').order('sort_order', { ascending: true }),
+                supabaseClient.from('gallery').select('*').order('sort_order', { ascending: true })
+            ]);
+
+            if (settingsRes.error) throw settingsRes.error;
+            if (menuRes.error) throw menuRes.error;
+            if (galleryRes.error) throw galleryRes.error;
+
+            // Store into cloudState with null-value protection
+            if (settingsRes.data) {
+                const mergedSettings = { ...defaultSettings };
+                Object.keys(settingsRes.data).forEach(key => {
+                    if (settingsRes.data[key] !== null && settingsRes.data[key] !== undefined) {
+                        mergedSettings[key] = settingsRes.data[key];
+                    }
+                });
+                cloudState.settings = mergedSettings;
+                localStorage.setItem('warkop_settings', JSON.stringify(mergedSettings));
+            }
+
+            if (menuRes.data && menuRes.data.length > 0) {
+                cloudState.menu = menuRes.data;
+                localStorage.setItem('warkop_menu', JSON.stringify(menuRes.data));
+            }
+
+            if (galleryRes.data && galleryRes.data.length > 0) {
+                cloudState.gallery = galleryRes.data;
+                localStorage.setItem('warkop_gallery', JSON.stringify(galleryRes.data));
+            }
+
+            // Re-render after data arrives
+            renderPageSettings();
+            renderFeaturedMenu();
+            renderGallery();
+            lucide.createIcons();
+        } catch (e) {
+            console.warn('Gagal memuat data dari cloud, memakai data lokal:', e);
+        }
+    }
+
+    // ==========================================
     // 1. DATA INITIALIZATION & FALLBACKS
     // ==========================================
     const defaultSettings = {
@@ -259,10 +341,13 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
         bindGalleryLightbox();
     };
 
-    // Execute dynamic content rendering first
+// Execute dynamic content rendering first
     renderPageSettings();
     renderFeaturedMenu();
     renderGallery();
+
+    // Fetch cloud data (if configured) and re-render with server content
+    fetchAllCloudData();
 
     // Call Lucide to parse dynamically added icons
     lucide.createIcons();
@@ -468,7 +553,7 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
         });
     }
 
-    // Listen for storage changes from the admin tab and instantly update the content
+// Listen for storage changes from the admin tab and instantly update the content
     window.addEventListener('storage', (e) => {
         if (e.key === 'warkop_settings' || e.key === 'warkop_menu' || e.key === 'warkop_gallery') {
             renderPageSettings();
@@ -477,4 +562,36 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
             lucide.createIcons();
         }
     });
+
+    // ==========================================
+    // 9. SUPABASE REALTIME SUBSCRIPTION (if configured)
+    //    Memperbarui halaman publik otomatis saat admin
+    //    mengubah data di perangkat lain (HP/laptop).
+    // ==========================================
+    function setupRealtime() {
+        if (!useCloud) return;
+
+        const channels = supabaseClient
+            .channel('warkop-public-sync')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'menu' }, () => fetchAllCloudData())
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'menu' }, () => fetchAllCloudData())
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'menu' }, () => fetchAllCloudData())
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gallery' }, () => fetchAllCloudData())
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'gallery' }, () => fetchAllCloudData())
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'gallery' }, () => fetchAllCloudData())
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' }, () => fetchAllCloudData());
+
+        channels.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.info('Real-time sync aktif. Halaman akan terupdate otomatis.');
+            }
+        });
+    }
+
+    setupRealtime();
+    
+    // Tarik data dari cloud saat pertama kali website dimuat
+    if (useCloud) {
+        fetchAllCloudData();
+    }
 });

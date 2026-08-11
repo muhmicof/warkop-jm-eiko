@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
     // ==========================================
+    // 0. SUPABASE CLOUD SYNC
+    // ==========================================
+    const supabaseClient = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : null;
+    const useCloud = !!supabaseClient;
+
+    // ==========================================
     // 1. DEFAULT DATA CONFIGURATION
     // ==========================================
     const defaultSettings = {
@@ -147,13 +153,144 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('warkop_gallery', JSON.stringify(defaultGallery));
     }
 
-// Database Loaders
+// Database Loaders (localStorage = local working copy,
+// cloud sync otomatis ke Supabase jika sudah dikonfigurasi)
     const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
-    const saveSettings = (data) => localStorage.setItem('warkop_settings', JSON.stringify(data));
+    const saveSettings = (data) => {
+        localStorage.setItem('warkop_settings', JSON.stringify(data));
+        if (useCloud) syncSettingsCloud(data);
+    };
     const getMenu = () => JSON.parse(localStorage.getItem('warkop_menu'));
-    const saveMenu = (data) => localStorage.setItem('warkop_menu', JSON.stringify(data));
+    const saveMenu = (data) => {
+        localStorage.setItem('warkop_menu', JSON.stringify(data));
+        if (useCloud) syncMenuCloud(data);
+    };
     const getGallery = () => JSON.parse(localStorage.getItem('warkop_gallery'));
-    const saveGallery = (data) => localStorage.setItem('warkop_gallery', JSON.stringify(data));
+    const saveGallery = (data) => {
+        localStorage.setItem('warkop_gallery', JSON.stringify(data));
+        if (useCloud) syncGalleryCloud(data);
+    };
+
+    // ==========================================
+    // 1B. SUPABASE CLOUD SYNC FUNCTIONS
+    // ==========================================
+    // Settings: upsert single row (id=1)
+    async function syncSettingsCloud(data) {
+        try {
+            const { id, ...fields } = data;
+            const res = await supabaseClient.from('settings').upsert({ id: 1, ...fields });
+            if (res.error) throw res.error;
+        } catch (e) {
+            console.warn('Gagal sinkronisasi settings ke cloud:', e);
+            showToast('Data tersimpan lokal, tetapi gagal sinkron ke cloud.', true);
+        }
+    }
+
+    // Menu: replace all rows (delete + insert) agar urutan sesuai
+    async function syncMenuCloud(items) {
+        try {
+            const { error: delErr } = await supabaseClient.from('menu').delete().neq('id', 0);
+            if (delErr) throw delErr;
+            if (items.length) {
+                const rows = items.map((it, i) => ({
+                    name: it.name,
+                    category: it.category,
+                    price: it.price,
+                    desc: it.desc,
+                    image: it.image,
+                    sort_order: i
+                }));
+                const { error: insErr } = await supabaseClient.from('menu').insert(rows);
+                if (insErr) throw insErr;
+            }
+        } catch (e) {
+            console.warn('Gagal sinkronisasi menu ke cloud:', e);
+            showToast('Data tersimpan lokal, tetapi gagal sinkron ke cloud.', true);
+        }
+    }
+
+    // Gallery: replace all rows (delete + insert)
+    async function syncGalleryCloud(items) {
+        try {
+            const { error: delErr } = await supabaseClient.from('gallery').delete().neq('id', 0);
+            if (delErr) throw delErr;
+            if (items.length) {
+                const rows = items.map((it, i) => ({
+                    title: it.title,
+                    category: it.category,
+                    image: it.image,
+                    sort_order: i
+                }));
+                const { error: insErr } = await supabaseClient.from('gallery').insert(rows);
+                if (insErr) throw insErr;
+            }
+        } catch (e) {
+            console.warn('Gagal sinkronisasi galeri ke cloud:', e);
+            showToast('Data tersimpan lokal, tetapi gagal sinkron ke cloud.', true);
+        }
+    }
+
+// Load semua data dari cloud ke localStorage (untuk edit dari perangkat mana pun)
+    async function loadCloudData() {
+        if (!useCloud) return;
+        try {
+            const [settingsRes, menuRes, galleryRes] = await Promise.all([
+                supabaseClient.from('settings').select('*').limit(1).maybeSingle(),
+                supabaseClient.from('menu').select('*').order('sort_order', { ascending: true }),
+                supabaseClient.from('gallery').select('*').order('sort_order', { ascending: true })
+            ]);
+
+            if (settingsRes.error) throw settingsRes.error;
+            if (menuRes.error) throw menuRes.error;
+            if (galleryRes.error) throw galleryRes.error;
+
+            // Jika cloud masih kosong atau ada field bernilai null, lengkapi dengan data default
+            if (!settingsRes.data || !settingsRes.data.hero_title) {
+                const currentLocal = JSON.parse(localStorage.getItem('warkop_settings')) || {};
+                const settingsToSync = { ...defaultSettings, ...currentLocal, ...(settingsRes.data || {}) };
+                delete settingsToSync.id;
+                await syncSettingsCloud(settingsToSync);
+                localStorage.setItem('warkop_settings', JSON.stringify({ id: 1, ...settingsToSync }));
+            } else {
+                localStorage.setItem('warkop_settings', JSON.stringify(settingsRes.data));
+            }
+
+            if (!menuRes.data || menuRes.data.length === 0) {
+                const currentLocal = JSON.parse(localStorage.getItem('warkop_menu'));
+                const menuToSync = (currentLocal && currentLocal.length > 0) ? currentLocal : defaultMenu;
+                await syncMenuCloud(menuToSync);
+                const fresh = await supabaseClient.from('menu').select('*').order('sort_order', { ascending: true });
+                if (fresh.data && fresh.data.length > 0) {
+                    localStorage.setItem('warkop_menu', JSON.stringify(fresh.data));
+                } else {
+                    localStorage.setItem('warkop_menu', JSON.stringify(menuToSync));
+                }
+            } else {
+                localStorage.setItem('warkop_menu', JSON.stringify(menuRes.data));
+            }
+
+            if (!galleryRes.data || galleryRes.data.length === 0) {
+                const currentLocal = JSON.parse(localStorage.getItem('warkop_gallery'));
+                const galleryToSync = (currentLocal && currentLocal.length > 0) ? currentLocal : defaultGallery;
+                await syncGalleryCloud(galleryToSync);
+                const fresh = await supabaseClient.from('gallery').select('*').order('sort_order', { ascending: true });
+                if (fresh.data && fresh.data.length > 0) {
+                    localStorage.setItem('warkop_gallery', JSON.stringify(fresh.data));
+                } else {
+                    localStorage.setItem('warkop_gallery', JSON.stringify(galleryToSync));
+                }
+            } else {
+                localStorage.setItem('warkop_gallery', JSON.stringify(galleryRes.data));
+            }
+
+            // Re-render dashboard (if initDashboard already ran)
+            if (typeof renderDashboardAll === 'function') {
+                renderDashboardAll();
+            }
+        } catch (e) {
+            console.warn('Gagal memuat data dari cloud, memakai data lokal:', e);
+        }
+    }
 
 
     // ==========================================
@@ -168,11 +305,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginError = document.getElementById('loginError');
     const btnLogout = document.getElementById('btnLogout');
 
-    const checkLoginState = () => {
+const checkLoginState = () => {
         if (sessionStorage.getItem('warkop_admin_logged') === 'true') {
             loginView.classList.add('hide');
             dashboardView.classList.remove('hide');
             initDashboard();
+            // Muat data terbaru dari cloud (jika dikonfigurasi) agar
+            // dashboard menampilkan data yang sama di semua perangkat.
+            loadCloudData();
         } else {
             loginView.classList.remove('hide');
             dashboardView.classList.add('hide');
@@ -685,7 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-        // --- 5D. BIND MODAL CLOSING ACTIONS ---
+// --- 5D. BIND MODAL CLOSING ACTIONS ---
         const closeBtnTriggers = document.querySelectorAll('[data-close-modal]');
         closeBtnTriggers.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -694,6 +834,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         });
+
+        // Ekspos render functions agar `loadCloudData()` dapat
+        // memuat ulang dashboard setelah data cloud diambil.
+        window.renderDashboardAll = () => {
+            loadSettingsFormValues();
+            renderAdminMenuTable();
+            renderAdminGalleryTable();
+        };
     }
 
 
