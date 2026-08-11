@@ -84,6 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
         } catch (e) {
             console.warn('Gagal memuat data dari cloud, memakai data lokal:', e);
+            // Tetap render apa yang ada di localStorage meskipun gagal mengambil dari cloud
+            renderPageSettings();
+            renderFeaturedMenu();
+            renderGallery();
+            lucide.createIcons();
         }
     }
 
@@ -593,5 +598,11 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
     // Tarik data dari cloud saat pertama kali website dimuat
     if (useCloud) {
         fetchAllCloudData();
+    } else {
+        // Jika tidak menggunakan cloud, pastikan tetap me-render data lokal
+        renderPageSettings();
+        renderFeaturedMenu();
+        renderGallery();
+        lucide.createIcons();
     }
 });
