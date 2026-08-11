@@ -16,83 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gallery: null
     };
 
-    // Empty-state fallback for localStorage when cloud is active
-    const emptySettings = {
-        hero_title: 'Hangatnya Kopi,<br>Kuatnya Persaudaraan.',
-        hero_desc: 'Sedang memuat konten dari penyimpanan cloud...',
-        hero_image: 'images/hero_kettle_coffee.png',
-        about_since: '',
-        about_title: '',
-        about_desc1: '',
-        about_desc2: '',
-        about_image: 'images/warkop_about.png'
-    };
-
-    // Pre-populate localStorage with empty defaults if using cloud so renders don't crash
-    if (useCloud) {
-        if (!localStorage.getItem('warkop_settings')) {
-            localStorage.setItem('warkop_settings', JSON.stringify(emptySettings));
-        }
-        if (!localStorage.getItem('warkop_menu')) {
-            localStorage.setItem('warkop_menu', JSON.stringify([]));
-        }
-        if (!localStorage.getItem('warkop_gallery')) {
-            localStorage.setItem('warkop_gallery', JSON.stringify([]));
-        }
-    }
-
-    // Fetch all data from Supabase (menu & gallery ordered by sort_order)
-    async function fetchAllCloudData() {
-        if (!useCloud) return;
-        try {
-            const [settingsRes, menuRes, galleryRes] = await Promise.all([
-                supabaseClient.from('settings').select('*').limit(1).maybeSingle(),
-                supabaseClient.from('menu').select('*').order('sort_order', { ascending: true }),
-                supabaseClient.from('gallery').select('*').order('sort_order', { ascending: true })
-            ]);
-
-            if (settingsRes.error) throw settingsRes.error;
-            if (menuRes.error) throw menuRes.error;
-            if (galleryRes.error) throw galleryRes.error;
-
-            // Store into cloudState with null-value protection
-            if (settingsRes.data) {
-                const mergedSettings = { ...defaultSettings };
-                Object.keys(settingsRes.data).forEach(key => {
-                    if (settingsRes.data[key] !== null && settingsRes.data[key] !== undefined) {
-                        mergedSettings[key] = settingsRes.data[key];
-                    }
-                });
-                cloudState.settings = mergedSettings;
-                localStorage.setItem('warkop_settings', JSON.stringify(mergedSettings));
-            }
-
-            if (menuRes.data && menuRes.data.length > 0) {
-                cloudState.menu = menuRes.data;
-                localStorage.setItem('warkop_menu', JSON.stringify(menuRes.data));
-            }
-
-            if (galleryRes.data && galleryRes.data.length > 0) {
-                cloudState.gallery = galleryRes.data;
-                localStorage.setItem('warkop_gallery', JSON.stringify(galleryRes.data));
-            }
-
-            // Re-render after data arrives
-            renderPageSettings();
-            renderFeaturedMenu();
-            renderGallery();
-            lucide.createIcons();
-        } catch (e) {
-            console.warn('Gagal memuat data dari cloud, memakai data lokal:', e);
-            // Tetap render apa yang ada di localStorage meskipun gagal mengambil dari cloud
-            renderPageSettings();
-            renderFeaturedMenu();
-            renderGallery();
-            lucide.createIcons();
-        }
-    }
-
-    // ==========================================
+// ==========================================
     // 1. DATA INITIALIZATION & FALLBACKS
     // ==========================================
     const defaultSettings = {
@@ -221,6 +145,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+    // Pre-populate localStorage with default data if empty so renders don't crash
+    if (!localStorage.getItem('warkop_settings')) {
+        localStorage.setItem('warkop_settings', JSON.stringify(defaultSettings));
+    }
+    if (!localStorage.getItem('warkop_menu')) {
+        localStorage.setItem('warkop_menu', JSON.stringify(defaultMenu));
+    }
+    if (!localStorage.getItem('warkop_gallery')) {
+        localStorage.setItem('warkop_gallery', JSON.stringify(defaultGallery));
+    }
+
+    // Fetch all data from Supabase (menu & gallery ordered by sort_order)
+    async function fetchAllCloudData() {
+        if (!useCloud) return;
+        try {
+            const [settingsRes, menuRes, galleryRes] = await Promise.all([
+                supabaseClient.from('settings').select('*').limit(1).maybeSingle(),
+                supabaseClient.from('menu').select('*').order('sort_order', { ascending: true }),
+                supabaseClient.from('gallery').select('*').order('sort_order', { ascending: true })
+            ]);
+
+            if (settingsRes.error) throw settingsRes.error;
+            if (menuRes.error) throw menuRes.error;
+            if (galleryRes.error) throw galleryRes.error;
+
+            // Store into cloudState with null-value protection
+            if (settingsRes.data) {
+                const mergedSettings = { ...defaultSettings };
+                Object.keys(settingsRes.data).forEach(key => {
+                    if (settingsRes.data[key] !== null && settingsRes.data[key] !== undefined) {
+                        mergedSettings[key] = settingsRes.data[key];
+                    }
+                });
+                cloudState.settings = mergedSettings;
+                localStorage.setItem('warkop_settings', JSON.stringify(mergedSettings));
+            }
+
+            if (menuRes.data && menuRes.data.length > 0) {
+                cloudState.menu = menuRes.data;
+                localStorage.setItem('warkop_menu', JSON.stringify(menuRes.data));
+            }
+
+            if (galleryRes.data && galleryRes.data.length > 0) {
+                cloudState.gallery = galleryRes.data;
+                localStorage.setItem('warkop_gallery', JSON.stringify(galleryRes.data));
+            }
+
+            // Re-render after data arrives
+            renderPageSettings();
+            renderFeaturedMenu();
+            renderGallery();
+            lucide.createIcons();
+        } catch (e) {
+            console.warn('Gagal memuat data dari cloud, memakai data lokal:', e);
+            // Tetap render apa yang ada di localStorage meskipun gagal mengambil dari cloud
+            renderPageSettings();
+            renderFeaturedMenu();
+            renderGallery();
+            lucide.createIcons();
+        }
+    }
+
+    
+
     // Local Storage Fallbacks
     if (!localStorage.getItem('warkop_settings')) {
         localStorage.setItem('warkop_settings', JSON.stringify(defaultSettings));
@@ -265,13 +253,14 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
         menuGrid.innerHTML = '';
         const menu = getMenu();
 
-        if (menu.length === 0) {
+        if (!menu || !Array.isArray(menu) || menu.length === 0 || !menu[0]) {
             menuGrid.innerHTML = '<p class="text-center w-full" style="grid-column: 1/-1; padding: 40px; color: var(--text-muted);">Belum ada menu unggulan untuk ditampilkan.</p>';
             return;
         }
 
-        // Render Large Card (Item 1)
-        const largeItem = menu[0];
+        try {
+            // Render Large Card (Item 1)
+            const largeItem = menu[0];
         let largeCardHTML = `
             <div class="menu-card-large animate-scroll">
                 <div class="card-image-container">
@@ -317,6 +306,10 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
             subGridHTML += `</div>`;
             menuGrid.insertAdjacentHTML('beforeend', subGridHTML);
         }
+        } catch (err) {
+            console.error('Error rendering featured menu:', err);
+            menuGrid.innerHTML = '<p class="text-center w-full" style="padding: 40px; color: red;">Terjadi kesalahan saat memuat menu.</p>';
+        }
     };
 
     // 2C. Render Gallery Grid
@@ -327,23 +320,31 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
         galleryGrid.innerHTML = '';
         const gallery = getGallery();
 
-        gallery.forEach(item => {
-            const itemHTML = `
-                <div class="gallery-item animate-scroll">
-                    <img src="${item.image}" alt="${item.title}">
-                    <div class="gallery-overlay">
-                        <span class="gallery-category">${item.category}</span>
-                        <h3 class="gallery-item-title">${item.title}</h3>
+        if (!gallery || !Array.isArray(gallery) || gallery.length === 0) {
+            galleryGrid.innerHTML = '<p class="text-center w-full" style="grid-column: 1/-1; padding: 40px; color: var(--text-muted);">Belum ada foto galeri.</p>';
+            return;
+        }
+
+        try {
+            gallery.forEach(item => {
+                if (!item) return;
+                const itemHTML = `
+                    <div class="gallery-item animate-scroll">
+                        <img src="${item.image}" alt="${item.title}">
+                        <div class="gallery-overlay">
+                            <span class="gallery-category">${item.category}</span>
+                            <h3 class="gallery-item-title">${item.title}</h3>
+                        </div>
                     </div>
-                </div>
-            `;
-            galleryGrid.insertAdjacentHTML('beforeend', itemHTML);
-        });
-
-
-
-        // Bind Lightbox click listeners to the newly rendered gallery elements
-        bindGalleryLightbox();
+                `;
+                galleryGrid.insertAdjacentHTML('beforeend', itemHTML);
+            });
+            // Bind Lightbox click listeners to the newly rendered gallery elements
+            bindGalleryLightbox();
+        } catch (err) {
+            console.error('Error rendering gallery:', err);
+            galleryGrid.innerHTML = '<p class="text-center w-full" style="padding: 40px; color: red;">Terjadi kesalahan saat memuat galeri.</p>';
+        }
     };
 
 // Execute dynamic content rendering first
@@ -594,15 +595,14 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
     }
 
     setupRealtime();
-    
-    // Tarik data dari cloud saat pertama kali website dimuat
+    // Render local data first for instant UI (no blank screens)
+    renderPageSettings();
+    renderFeaturedMenu();
+    renderGallery();
+    lucide.createIcons();
+
+    // Tarik data dari cloud di background
     if (useCloud) {
         fetchAllCloudData();
-    } else {
-        // Jika tidak menggunakan cloud, pastikan tetap me-render data lokal
-        renderPageSettings();
-        renderFeaturedMenu();
-        renderGallery();
-        lucide.createIcons();
     }
 });
