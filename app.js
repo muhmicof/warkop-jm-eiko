@@ -16,6 +16,62 @@ document.addEventListener('DOMContentLoaded', () => {
         gallery: null
     };
 
+    // ==========================================
+    // 0B. VISITOR TRACKING
+    // ==========================================
+    async function trackVisitorDaily() {
+        if (!useCloud) return;
+        
+        // Proteksi agar refresh berulang kali tidak menambah hitungan dalam satu sesi
+        if (sessionStorage.getItem('warkop_visited_today') === 'true') {
+            return;
+        }
+
+        try {
+            const today = new Date();
+            // Format YYYY-MM-DD
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+
+            // Ambil data hari ini (jika ada)
+            const { data, error: selectErr } = await supabaseClient
+                .from('visitor_daily')
+                .select('count')
+                .eq('day', todayStr)
+                .maybeSingle();
+
+            if (selectErr) throw selectErr;
+
+            if (data) {
+                // Baris sudah ada — UPDATE count + 1
+                const { error: updateErr } = await supabaseClient
+                    .from('visitor_daily')
+                    .update({ count: (data.count || 0) + 1 })
+                    .eq('day', todayStr);
+
+                if (updateErr) throw updateErr;
+            } else {
+                // Baris belum ada — INSERT baris baru untuk hari ini
+                const { error: insertErr } = await supabaseClient
+                    .from('visitor_daily')
+                    .insert({ day: todayStr, count: 1 });
+
+                if (insertErr) throw insertErr;
+            }
+
+            // Tandai sudah dihitung di sesi ini
+            sessionStorage.setItem('warkop_visited_today', 'true');
+            
+        } catch (e) {
+            console.error('Gagal melacak kunjungan:', e);
+        }
+    }
+    
+    // Jalankan pelacakan saat aplikasi dimuat
+    trackVisitorDaily();
+
 // ==========================================
     // 1. DATA INITIALIZATION & FALLBACKS
     // ==========================================

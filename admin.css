@@ -641,3 +641,66 @@ button {
 .toast-error {
     background-color: var(--color-danger);
 }
+
+/* --- STATS WIDGET --- */
+.stats-widget {
+    background-color: #0F172A; /* Very dark blue matching the screenshot */
+    border-radius: var(--border-radius-md);
+    padding: 24px;
+    margin-bottom: 30px;
+    color: #FFFFFF;
+}
+
+.stats-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.stat-card {
+    background-color: #1E293B; /* Lighter dark blue */
+    border-radius: var(--border-radius-sm);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:last-child {
+    margin-bottom: 0;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 16px;
+    bottom: 16px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+}
+
+.stat-today::before {
+    background-color: #3B82F6; /* Blue for today */
+}
+
+.stat-total::before {
+    background-color: #EAB308; /* Yellow for total */
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94A3B8;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+}

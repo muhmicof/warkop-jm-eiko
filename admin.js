@@ -462,6 +462,65 @@ const checkLoginState = () => {
     // 5. DASHBOARD MAIN CODE IMPLEMENTATION
     // ==========================================
     function initDashboard() {
+        // --- 5.0. FETCH VISITOR STATS ---
+        const fetchVisitorStats = async () => {
+            const elToday = document.getElementById('statTodayVisits');
+            const elTotal = document.getElementById('statTotalVisits');
+            if (!useCloud) {
+                if (elToday) elToday.textContent = '0';
+                if (elTotal) elTotal.textContent = '0';
+                return;
+            }
+            try {
+                // Get all daily visits to calculate total
+                const { data, error } = await supabaseClient
+                    .from('visitor_daily')
+                    .select('day, count');
+                
+                // DEBUG: selalu log ke console agar mudah dianalisis
+                console.log('[VisitorStats] data dari Supabase:', data);
+                console.log('[VisitorStats] error dari Supabase:', error);
+
+                if (error) throw error;
+                
+                let totalVisits = 0;
+                let todayVisits = 0;
+
+                // Format tanggal hari ini YYYY-MM-DD (sama dengan format Supabase date column)
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const dayStr = String(today.getDate()).padStart(2, '0');
+                const todayFormatted = `${year}-${month}-${dayStr}`;
+
+                console.log('[VisitorStats] hari ini (format):', todayFormatted);
+
+                if (data && data.length > 0) {
+                    // Sum all counts for total
+                    totalVisits = data.reduce((acc, curr) => acc + (curr.count || 0), 0);
+                    
+                    // Find today's count (normalize format: take only first 10 chars YYYY-MM-DD)
+                    const todayData = data.find(item => {
+                        const itemDay = item.day ? String(item.day).substring(0, 10) : '';
+                        return itemDay === todayFormatted;
+                    });
+                    if (todayData) {
+                        todayVisits = todayData.count || 0;
+                    }
+                    console.log('[VisitorStats] data hari ini:', todayData);
+                }
+
+                console.log('[VisitorStats] total:', totalVisits, '| hari ini:', todayVisits);
+
+                // Update UI
+                if (elTotal) elTotal.textContent = totalVisits;
+                if (elToday) elToday.textContent = todayVisits;
+            } catch (e) {
+                console.error('[VisitorStats] GAGAL fetch:', e);
+            }
+        };
+        fetchVisitorStats();
+
         // --- 5A. LOAD STATIC SETTINGS FORM ---
         const settingsForm = document.getElementById('settingsForm');
         const heroTitleInput = document.getElementById('heroTitleInput');

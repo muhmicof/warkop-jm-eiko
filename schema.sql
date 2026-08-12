@@ -75,3 +75,18 @@ on conflict (id) do update set
   about_desc1 = coalesce(settings.about_desc1, excluded.about_desc1),
   about_desc2 = coalesce(settings.about_desc2, excluded.about_desc2),
   about_image = coalesce(settings.about_image, excluded.about_image);
+
+-- ============================================================
+-- 7. Tabel Visitor Daily (Statistik Pengunjung Harian)
+-- ============================================================
+create table if not exists visitor_daily (
+  day date primary key,
+  count int4 default 0
+);
+
+-- Aktifkan Row Level Security (RLS) pada tabel visitor_daily
+alter table visitor_daily enable row level security;
+
+-- Buat Kebijakan Akses Publik (Semua akses)
+drop policy if exists "public_visitor_daily" on visitor_daily;
+create policy "public_visitor_daily" on visitor_daily for all using (true) with check (true);
