@@ -209,20 +209,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 
-    // Local Storage Fallbacks
-    if (!localStorage.getItem('warkop_settings')) {
-        localStorage.setItem('warkop_settings', JSON.stringify(defaultSettings));
-    }
-    if (!localStorage.getItem('warkop_menu')) {
-        localStorage.setItem('warkop_menu', JSON.stringify(defaultMenu));
-    }
-    if (!localStorage.getItem('warkop_gallery')) {
-        localStorage.setItem('warkop_gallery', JSON.stringify(defaultGallery));
-    }
-
-const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
+    const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
     const getMenu = () => JSON.parse(localStorage.getItem('warkop_menu'));
     const getGallery = () => JSON.parse(localStorage.getItem('warkop_gallery'));
+
+    // ==========================================
+    // 4. ANIMATION CONTROLLERS (INTERSECTION OBSERVER)
+    // ==========================================
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    const animElements = document.querySelectorAll('.animate-up, .animate-fade, .animate-scroll');
+    animElements.forEach(el => revealObserver.observe(el));
+
+    // Force run animations on top-level home section elements
+    document.querySelectorAll('#home .animate-up, #home .animate-fade').forEach(el => {
+        el.classList.add('active');
+    });
 
     // ==========================================
     // 2. DYNAMIC CONTENT RENDERING
@@ -306,7 +320,8 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
             subGridHTML += `</div>`;
             menuGrid.insertAdjacentHTML('beforeend', subGridHTML);
         }
-        } catch (err) {
+        menuGrid.querySelectorAll('.animate-scroll').forEach(el => revealObserver.observe(el));
+    } catch (err) {
             console.error('Error rendering featured menu:', err);
             menuGrid.innerHTML = '<p class="text-center w-full" style="padding: 40px; color: red;">Terjadi kesalahan saat memuat menu.</p>';
         }
@@ -339,8 +354,7 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
                 `;
                 galleryGrid.insertAdjacentHTML('beforeend', itemHTML);
             });
-            // Bind Lightbox click listeners to the newly rendered gallery elements
-            bindGalleryLightbox();
+            galleryGrid.querySelectorAll('.animate-scroll').forEach(el => revealObserver.observe(el));
         } catch (err) {
             console.error('Error rendering gallery:', err);
             galleryGrid.innerHTML = '<p class="text-center w-full" style="padding: 40px; color: red;">Terjadi kesalahan saat memuat galeri.</p>';
@@ -412,30 +426,7 @@ const getSettings = () => JSON.parse(localStorage.getItem('warkop_settings'));
     });
 
 
-    // ==========================================
-    // 4. ANIMATION CONTROLLERS (INTERSECTION OBSERVER)
-    // ==========================================
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-
-    const revealObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('active');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, observerOptions);
-
-    const animElements = document.querySelectorAll('.animate-up, .animate-fade, .animate-scroll');
-    animElements.forEach(el => revealObserver.observe(el));
-
-    // Force run animations on top-level home section elements
-    document.querySelectorAll('#home .animate-up, #home .animate-fade').forEach(el => {
-        el.classList.add('active');
-    });
+    
 
 
     // ==========================================
